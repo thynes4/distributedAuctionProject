@@ -1,4 +1,5 @@
 package general;
 
-public record SocketData() {
-}
+import java.io.Serializable;
+
+public record SocketData(String hostname, int port) implements Serializable {}
