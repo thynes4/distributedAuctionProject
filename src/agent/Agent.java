@@ -1,6 +1,6 @@
 /**
  * Thomas Hynes, Christopher Jarek, Carmen Manohan
- * Agent House Main
+ * Agent Main
  */
 package agent;
 
