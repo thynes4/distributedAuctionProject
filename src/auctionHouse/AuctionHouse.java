@@ -1,5 +1,5 @@
 /**
- * Thomas Hynes, Christopher Jarek, Carmen Manohan
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
  * Auction House Main
  */
 package auctionHouse;
