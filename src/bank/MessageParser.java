@@ -2,7 +2,6 @@ package bank;
 
 import general.Message;
 import javafx.util.Pair;
-import general.Message;
 import general.Message.*;
 
 import java.io.IOException;
@@ -34,20 +33,20 @@ public class MessageParser implements Runnable {
                 Message m = data.getKey();
 
                 if (m instanceof AuctionOver auctionOver) {
-                    bank.auctionEnded(auctionOver.ahNum(), auctionOver.clientNum(), auctionOver.item(), auctionOver.amount());
-                    bank.sendAgentBalance(auctionOver.clientNum());
+                    bank.auctionEnded(auctionOver.ahNum(), auctionOver.agentNumber(), auctionOver.item(), auctionOver.amount());
+                    bank.sendAgentBalance(auctionOver.agentNumber());
                     bank.sendAHBalance(auctionOver.ahNum());
                 } else if (m instanceof AuctionHouseClosed closeAH) {
-                    bank.closeAuctionHouseAcc(closeAH.accNum());
+                    bank.closeAuctionHouseAcc(closeAH.accountNumber());
                 } else if (m instanceof CloseAgent closeAgent) {
-                    bank.closeAgentAccount(closeAgent.accNum());
+                    bank.closeAgentAccount(closeAgent.accountNumber());
                 } else if (m instanceof EndHold endHold) {
-                    bank.removeHold(endHold.accNum(), endHold.item());
-                    bank.sendAgentBalance(endHold.accNum());
+                    bank.removeHold(endHold.accountNumber(), endHold.item());
+                    bank.sendAgentBalance(endHold.accountNumber());
                 } else if (m instanceof NewHold newHold) {
                     boolean holdPlaced = bank.addNewHold(newHold);
-                    bank.sendAgentBalance(newHold.accNum());
-                    out.writeObject(new ConfirmHold(holdPlaced, newHold.accAndID(), newHold.accNum(), newHold.idNum()));
+                    bank.sendAgentBalance(newHold.accountNumber());
+                    out.writeObject(new ConfirmHold(holdPlaced, newHold.accAndID(), newHold.accountNumber(), newHold.idNum()));
                 } else {
                     System.out.println("Error: Invalid message on existing stream.");
                 }

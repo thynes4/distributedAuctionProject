@@ -30,21 +30,10 @@ public class AuctionHouse extends Application{
     private final Auction[] auctions = new Auction[3]; // list of starting auctions
     private String accountNumber; // account number
     private String name; // the agent's name
-    private int port; // bank port number
-    private double balance; // Auction house's bank account balance
+
+    private double AHBalance; // Auction house's bank account balance
     private int auctionNum = 0; //Auction ID number
-    private final long FREQ = 2_000_000_000; //Set to 2,000,000,000 (2 seconds)
     private boolean newAuctions; // are there new auctions available?
-
-    private final NumberFormat USD = NumberFormat.getCurrencyInstance(
-            new Locale("en", "US"));
-
-    private SocketListener sl; // socket listener
-    private SocketParser ps; // socket parser
-    private Thread sockListenThread;
-    private Thread parseSockThread;
-    private BlockingQueue<Socket> sockets;
-
 
     private final String[] itemColors = {"red", "orange", "yellow", "green",
             "blue", "purple", "black", "white"};
@@ -52,58 +41,58 @@ public class AuctionHouse extends Application{
             "desk", "bed", "dresser", "rug", "table", "recliner", "bench"};
 
     /**
-     * Confirms a hold on an auction bid.
+     * Confirms whether there are funds in an agent's account that are being held for a pending bid
      *
-     * @param message Confirmation of valid hold from bank.
+     * @param message message from the bank confirming that the funds are being held
      */
-    protected void bidConfirmation(Message.ConfirmHold message) {
+    protected void holdConfirmation(Message.ConfirmHold message) {
         try {
-            Auction auction = createNewAuction(message.id());
+            Auction auction = grabAuction(message.id()); // find the specified auction
             if (message.success()) {
-                auction.confirmBid(message);
+                auction.confirmBid(message); // bid is confirmed & the agent's funds are held
             }
-            sendAuctionInfo();
+            sendAuctionInfo(); // send the agent the updated auction info
         } catch (IllegalAccessException e) {
-            System.out.println("Error: Auction not found, hold confirmed:" +
+            System.out.println("Error: Auction not found" +
                     e.getMessage());
         }
     }
 
     /**
-     * Initiates process of verifying a bid.
-     * @param msg Bid message from client.
+     * handles a new bid message that has been received
+     * @param message message from the agent containing the bid's information
      */
-    protected void bidReceived(Message.NewBid msg) {
+    protected void bidReceived(Message.NewBid message) {
         try {
-            Auction auction = createNewAuction(msg.id());
-            auction.newBid(msg);
-        } catch (IllegalAccessException e) {
-            System.out.println("Error: " + e.getMessage());
+            // find the auction & check to see if the placed bid is valid.
+            Auction auction = grabAuction(message.id());
+            auction.checkValidBid(message);
+        } catch (IllegalAccessException ignored) {
             try {
-                agents.get(msg.accNum()).output.writeObject(
-                        new Message.ConfirmBid(false, msg.item(), name));
-            } catch (IOException err) {
-                System.out.println("Error writing failed bid: " +
-                        err.getMessage());
+                // if the auction cannot be found, try to send a message to the agent to
+                // indicate that the bid was unsuccessful
+                agents.get(message.accountNumber()).output.writeObject(
+                        new Message.ConfirmBid(false, message.item(), name));
+            } catch (IOException ignored2) {
             }
-        } catch (IOException e) {
-            System.out.println("Error sending message to bank/client: " +
-                    e.getMessage());
+        } catch (IOException ignored) {
         }
     }
 
 
     /**
-     * Returns the auction based on its id.
+     * grabs an auction given its ID number
      * @param id Unique id of an auction.
      * @return Auction object associated with id.
      * @throws IllegalAccessException Error if auction no longer open.
      */
-    private Auction createNewAuction(int id) throws IllegalAccessException {
+    private Auction grabAuction(int id) throws IllegalAccessException {
         for (int i = 0; i < 3; i++) {
-            if (auctions[i].id == id) return auctions[i];
+            // if the auction is found, return it
+            if (auctions[i].auctionID == id) return auctions[i];
         }
-        throw new IllegalAccessException("Auction not found in current auctions.");
+        // if the auction cannot be found, throw an exception and write a message to the console
+        throw new IllegalAccessException("That auction doesn't exist");
     }
 
     /**
@@ -111,7 +100,7 @@ public class AuctionHouse extends Application{
      * @param AHBalance updated AHBalance
      */
     protected void updateAHBankAccount(double AHBalance) {
-        this.balance = AHBalance;
+        this.AHBalance = AHBalance;
     }
 
     /**
@@ -127,11 +116,13 @@ public class AuctionHouse extends Application{
      * @param accountNumber the agent's account number
      */
     protected void disconnectAgent(String accountNumber) {
-        Connection connection = agents.remove(accountNumber);
-        if (connection != null) {
-            System.out.println("Disconnected the agent named: " + connection.name + " from the Auction House");
-            connection.listener.stop();
-            connection.thread.interrupt();
+        Connection agentConnection = agents.remove(accountNumber); // disconnect the agent from the auction house
+
+        // print a message to the console indicating that the agent was disconnected
+        if (agentConnection != null) {
+            System.out.println("Disconnected the agent named: " + agentConnection.name + " from the Auction House");
+            agentConnection.listener.stop();
+            agentConnection.thread.interrupt();
         }
     }
 
@@ -143,35 +134,39 @@ public class AuctionHouse extends Application{
      */
     protected void addNewAgent(Message.RegisterAgent message, ObjectOutputStream out,
                                ObjectInputStream in) {
-        Connection agent = new Connection();
-        agent.name = message.name();
-        agent.input = in;
-        agent.output = out;
-        agent.listener = new MessageListener(messages, in, out);
+        Connection agent = new Connection(); // the agent's connection
+        agent.name = message.name(); // the agent's name
+        agent.input = in; // the agent's input stream
+        agent.output = out; // the agent's output stream
+        agent.listener = new MessageListener(messages, in, out); // listens for messages
         agent.thread = new Thread(agent.listener);
 
-        agents.put(message.accNum(), agent);
+        agents.put(message.accountNumber(), agent); // add the agent to our map of connected agents
         System.out.println("Added a new agent named:  \"" + agent.name + "\"" + " to the Auction House");
 
         agent.thread.start();
-        sendAuctionInfo();
+        sendAuctionInfo(); // send the auction info to the agent
     }
 
     /**
      * Sends information on current auctions to each agent that's connected to the auction house
      */
     private void sendAuctionInfo() {
-        synchronized (auctions) {
+        synchronized (auctions) { // make sure auctions can only be access by one thread at a time
+
             if (!agents.isEmpty()) {
                 ArrayList<AuctionData> list = new ArrayList<>();
 
+                // collect the data for each auction & store it in our ArrayList called list
                 for (Auction auction : auctions) {
                     if (auction != null) {
-                        list.add(new AuctionData(auction.item, auction.id,
-                                auction.currentBid, auction.leadingBidder));
+                        list.add(new AuctionData(auction.item, auction.auctionID,
+                                auction.winningBid, auction.winningAgent));
                     }
                 }
 
+                // then, for each agent that's connected to the auction house,
+                // send over that list of auction data
                 for (String agent : agents.keySet()) {
                     ObjectOutputStream out = agents.get(agent).output;
 
@@ -195,11 +190,11 @@ public class AuctionHouse extends Application{
         for (int i = 0; i < 3; i++) {
             if ((auctions[i] != null) && (auctions[i].expired)) {
                 auctionsUpdated = true;
-                if (!auctions[i].leadingBidder.equals("no bidder")) {
+                if (!auctions[i].winningAgent.equals("no bidder")) {
                     auctions[i].auctionWon();
                 }
                 if (newAuctions) {
-                    auctions[i] = createNewAuction();
+                    auctions[i] = grabAuction();
                 } else {
                     auctions[i] = null;
                 }
@@ -213,7 +208,7 @@ public class AuctionHouse extends Application{
      * Each item is randomly chosen from the list of possible items and is randomly assigned a color
      * @return the new Auction item that is to be added to our list of all auctions
      */
-    private Auction createNewAuction() {
+    private Auction grabAuction() {
         String item = itemColors[(int)(Math.random() * itemColors.length)] + " " +
                 items[(int)(Math.random() * items.length)];
         return new Auction(item, ++auctionNum);
@@ -223,7 +218,7 @@ public class AuctionHouse extends Application{
      * Generates 3 random auctions for the starting options.
      */
     private void startingAuctions() {
-        for (int i = 0; i < 3; i++) {auctions[i] = createNewAuction();}
+        for (int i = 0; i < 3; i++) {auctions[i] = grabAuction();}
     }
 
     /**
@@ -280,165 +275,190 @@ public class AuctionHouse extends Application{
         primaryStage.show();
     }
 
-    private class Connection{
-        private Socket socket;
-        private ObjectInputStream input;
-        private ObjectOutputStream output;
-        private String name;
-        private Thread thread;
-        private MessageListener listener;
+    private static class Connection{
+        private Socket socket; // bank socket
+        private ObjectInputStream input; // input stream
+        private ObjectOutputStream output; // output stream
+        private String name; // the agent's name
+        private Thread thread; // runs the listener
+        private MessageListener listener; // listens for messages
     }
 
+    /**
+     * Private inner class Auction handles Agents bidding on objects & creates new auctions for items.
+     */
     private class Auction {
-        private final String item;
-        private final int id;
-        private double currentBid;
-        private String leadingBidder;
-        private String bidderAcct;
-        private final List<Message.NewBid> pendingBids;
+        private final String item; // the item up for bid
+        private final int auctionID; // the auction's unique ID number
+        private double winningBid; // the current winning bid on an item
+        private String winningAgent; // the agent currently winning the auction
+        private String agentAccount; // the agent's account number
+        private final List<Message.NewBid> pending; // the list of currently pending bids
 
         private Timer timer;
         private TimerTask task;
         private boolean expired;
-        private final long DELAY = 30_000L; //30s delay for timer
+        private final long EXPIRATION_TIMER = 30_000L; //30s delay for timer
 
         /**
          * Generates string used in hold messages to bank.
-         * @param id Auction id.
-         * @return Combination of acctNum and id.
+         * @param id the auction's ID number
+         * @return Combination of acctNum and id to let the bank know to hold funds from the account
          */
         private String holdStr(int id) {
             return accountNumber + ":" + id;
         }
 
         /**
-         * Sends relevant messages when this auction is won by a bidder.
+         * sends message to the bank and to the agent when an auction has been won
          */
         private void auctionWon() {
             try {
-                Connection c = agents.get(bidderAcct);
+                Connection agentConnection = agents.get(agentAccount);
                 bank.output.writeObject(new Message.AuctionOver(
-                        accountNumber, bidderAcct, holdStr(id), currentBid));
-                c.output.writeObject(new Message.AuctionWon(item, currentBid));
-            } catch (IOException e) {
-                System.out.println("Error writing auction over messages: " +
-                        e.getMessage());
+                        accountNumber, agentAccount, holdStr(auctionID), winningBid));
+                agentConnection.output.writeObject(new Message.AuctionWon(item, winningBid));
+            } catch (IOException ignored) {
             }
         }
 
         /**
-         * Updates high bidder on auction following verification of funds.
-         * @param msg Message from bank indicating hold is valid.
+         * Verifies whether the agent who placed a bid has enough funds to pay for the bid they placed.
+         * Finalizes the confirmation of the bid once the funds have been verified within the agent's bank account.
+         * @param message Message from bank indicating that the agent's money hold is valid b/c the bid is confirmed
          */
-        private void confirmBid(Message.ConfirmHold msg) {
-            expired = false;
-            resetTimer();
-            try {
-                Message.NewBid bid = findBid(msg);
-                pendingBids.remove(bid);
-                Connection c = agents.get(bid.accNum());
+        private void confirmBid(Message.ConfirmHold message) {
+            expired = false; // the bid hasn't expired yet
+            reset(); // reset the bid timer
 
-                if (!leadingBidder.equals("no bidder") &&
-                        (!bidderAcct.equals(msg.accNum()))) {
+            try {
+                Message.NewBid bid = grabBid(message);
+                pending.remove(bid); // remove the bid from our list of pending bids
+                Connection agentConnection = agents.get(bid.accountNumber()); // grab the agent's bank account number
+
+                // make sure the agent has the funds available in their bank account
+                if (!winningAgent.equals("no bidder") &&
+                        (!agentAccount.equals(message.accountNumber()))) {
                     bank.output.writeObject(new Message.EndHold(
-                            bidderAcct, currentBid, holdStr(id)));
+                            agentAccount, winningBid, holdStr(auctionID)));
                 }
 
-                if (bid.bid() > currentBid) {
-                    currentBid = bid.bid();
-                    leadingBidder = c.name;
-                    bidderAcct = bid.accNum();
+                // if the bid amount is higher than the current winning bid
+                // replace the current winning bid info with that of the new bid
+                // because the new bid is now the current winning bid
+                if (bid.bid() > winningBid) {
+                    winningBid = bid.bid();
+                    winningAgent = agentConnection.name;
+                    agentAccount = bid.accountNumber();
 
-                    c.output.writeObject(new Message.ConfirmBid(true, item, name));
-                    System.out.println("New bid on " + item +
-                            " accepted from " + leadingBidder);
+                    // send a message to the agent confirming that their bid was
+                    // accepted and confirmed, also print a message to the
+                    // console about the accepted bid
+                    agentConnection.output.writeObject(new Message.ConfirmBid(true, item, name));
+                    System.out.println("New bid on item: " + item +
+                            " was just accepted from agent: " + winningAgent);
                 }
                 else {
-                    c.output.writeObject(new Message.ConfirmBid(false, item, name));
+                    // send a message to the bank that the bid was rejected, also print a message to
+                    // the console about the rejected bid
+                    agentConnection.output.writeObject(new Message.ConfirmBid(false, item, name));
                     bank.output.writeObject(new Message.EndHold(
-                            bid.accNum(), bid.bid(), holdStr(bid.id())));
-                    System.out.println("New bid on " + item +
-                            " rejected from " + c.name);
+                            bid.accountNumber(), bid.bid(), holdStr(bid.id())));
+                    System.out.println("New bid on item: " + item +
+                            " was just rejected from agent: " + agentConnection.name);
                 }
-            } catch (IllegalAccessException e) {
-                System.out.println("Error: " + e.getMessage());
-            } catch (IOException e) {
-                System.out.println("Error writing bid confirmation/end hold: "+
-                        e.getMessage());
+            } catch (IllegalAccessException | IOException ignored) {
             }
         }
 
         /**
-         * Recalls a previous pending bid.
-         * @param msg Confirmation of valid hold message from bank.
+         * Grab a pending bid from the list of pending bids using the bid info provided in the message
+         * @param message Confirmation of valid hold message from bank.
          * @return Initial bid message from client.
          * @throws IllegalAccessException Error if old bid does not exist.
          */
-        private Message.NewBid findBid(Message.ConfirmHold msg) throws IllegalAccessException {
-            for (Message.NewBid newBid : pendingBids) {
-                if ((msg.id() == newBid.id()) &&
-                        (msg.accNum().equals(newBid.accNum()))) {
-                    return newBid;
+        private Message.NewBid grabBid(Message.ConfirmHold message) throws IllegalAccessException {
+            for (Message.NewBid bid : pending) {
+                // if the bid is found in the list of pending bids, return it
+                if ((message.id() == bid.id()) &&
+                        (message.accountNumber().equals(bid.accountNumber()))) {
+                    return bid;
                 }
             }
+            // if it's not found, throw an exception and print an error statement
             throw new IllegalAccessException(
-                    "Bid not found after confirmation.");
+                    "That bid was not found.");
         }
 
         /**
-         * Initiates check with bank to see if a bid is valid.
-         * @param msg Bid message from client.
+         * Checks to see if a bid placed is valid. If it is valid, confirm the bid and print a
+         * message to console indicating that the bid was confirmed. If the bid isn't valid, reject
+         * the bid and print a message to the console indicating that the bid was rejected.
+         * @param message Bid message from client.
          * @throws IOException Error if unable to request hold with bank.
          */
-        private void newBid(Message.NewBid msg) throws IOException {
-            resetTimer();
-            pendingBids.add(msg);
-            System.out.println("New bid on " + item +
-                    " received from " + agents.get(msg.accNum()).name);
-            if (msg.bid() > currentBid) {
+        private void checkValidBid(Message.NewBid message) throws IOException {
+            reset(); // reset the bidding timer
+            pending.add(message); // add the bid's info to our list of pending bids
+            System.out.println("New bid on the item: " + item +
+                    " was just received from agent: " + agents.get(message.accountNumber()).name);
+
+            // a bid is valid if the bid is greater than the current winning bid
+            if (message.bid() > winningBid) {
+                // send a message to the bank instructing it to hold the bid amount from the bidding agent's account
                 bank.output.writeObject(new Message.NewHold(
-                        msg.accNum(), msg.bid(), holdStr(id), id));
+                        message.accountNumber(), message.bid(), holdStr(auctionID), auctionID));
             } else {
-                agents.get(msg.accNum()).output.writeObject(
+                // a bid is invalid if the bid isn't greater than the current winning bid
+                // reject the bid
+                agents.get(message.accountNumber()).output.writeObject(
                         new Message.ConfirmBid(false, item, name));
-                System.out.println("New bid on " + item +
-                        " rejected from " + agents.get(msg.accNum()).name);
+                System.out.println("New bid on the item: " + item +
+                        " was just rejected from agent: " + agents.get(message.accountNumber()).name);
             }
         }
 
         /**
          * Resets the 30s timer on an auction
          */
-        private void resetTimer() {
+        private void reset() {
             timer.cancel();
             timer = new Timer();
             task = new TimerTask() {
                 @Override
-                public void run() {expired = true;}
+                public void run() {
+                    expired = true;
+                }
             };
-            timer.schedule(task, DELAY);
+            timer.schedule(task, EXPIRATION_TIMER);
         }
 
         /**
-         * Constructor for an auction item.
-         * @param item Name of item to be sold.
-         * @param auctionID Unique auctionID of auction at this auction house.
+         * Constructor for an auction item. Creates a new auction for an item given the auction's unique ID number
+         * and the item
+         * @param item the item up for bid
+         * @param auctionID the auction's unique ID number
          */
         private Auction(String item, int auctionID) {
-            this.item = item;
-            this.id = auctionID;
-            currentBid = 20; // All auctions start at $20
-            leadingBidder = "no bidder";
-            expired = false;
-            pendingBids = new ArrayList<>();
+            this.item = item; // the item
+            this.auctionID = auctionID; // the auction's ID
+            winningBid = 20; // all auctions should start at $20
 
+            winningAgent = "no bidder"; // the auction was just created, so there's no winning bidder yet
+
+            expired = false; // the auction was just created, so it hasn't expired yet
+            pending = new ArrayList<>(); // a list of pending bids
+
+            // Schedule a timer of 30 seconds
+            // the task TimerTask will mark an auction as expired if no bids have been placed for
+            // a specified duration of time
             timer = new Timer();
             task = new TimerTask() {
                 @Override
                 public void run() {expired = true;}
             };
 
-            timer.schedule(task, DELAY);
+            timer.schedule(task, EXPIRATION_TIMER);
         }
     }
 }
