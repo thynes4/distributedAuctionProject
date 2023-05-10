@@ -365,6 +365,9 @@ public class Agent extends Application {
         return root;
     }
 
+    /**
+     * method to update the log object with the items won from the auction house
+     */
     private void showItemsWon() {
         log.setText("");
         for (Pair<String, Double> pair : itemsWon) {
@@ -373,8 +376,12 @@ public class Agent extends Application {
         }
     }
 
+    /**
+     * Method used to construct the jfx object used as the agent's UI
+     * @return returns a gridpane obj used to represent the window as a whole
+     */
     private GridPane buildWindow() {
-        GridPane gp = new GridPane();
+        GridPane root = new GridPane();
         log = new Label();
         ScrollPane logPane = new ScrollPane();
         Button close = new Button("Close Bidding Agent");
@@ -383,34 +390,37 @@ public class Agent extends Application {
         auctionPane = new GridPane();
         int row = 0;
 
-        gp.setPadding(new Insets(10));
-        gp.setVgap(10);
-        gp.setHgap(10);
+        ColumnConstraints columnConstraints = new ColumnConstraints();
+        columnConstraints.setHgrow(Priority.SOMETIMES);
+        root.getColumnConstraints().add(columnConstraints);
 
-        gp.add(new Label("Bidder name: " + name), 1, row, 4, 1);
+        root.setPadding(new Insets(10));
+        root.setVgap(10);
+        root.setHgap(10);
 
-        gp.add(new Label("Account number: " + acctNum), 1, ++row, 4, 1);
+        root.add(new Label("Bidder name: " + name), 1, row, 4, 1);
+        root.add(new Label("Account number: " + acctNum), 1, ++row, 4, 1);
 
         balLabel.setMinWidth(50);
         holdLabel.setMinWidth(50);
 
-        gp.add(new Label("Balance:"), 1, ++row);
-        gp.add(balLabel, 2, row);
-        gp.add(new Label("Holds:"), 3, row);
-        gp.add(holdLabel, 4, row);
+        root.add(new Label("Balance:"), 1, ++row);
+        root.add(balLabel, 2, row);
+        root.add(new Label("Holds:"), 3, row);
+        root.add(holdLabel, 4, row);
 
         auctionPane.setPadding(new Insets(10));
         auctionPane.setVgap(5);
         auctionPane.setHgap(5);
 
-        gp.add(auctionPane, 2, ++row, 3, 1);
+        root.add(auctionPane, 2, ++row, 3, 1);
 
         log.setMinWidth(200);
         logPane.setMinHeight(500);
         logPane.setMinWidth(225);
         logPane.setContent(log);
-        gp.add(new Label("Items won:"), 0, 1);
-        gp.add(logPane, 0, 2, 1, 3);
+        root.add(new Label("Items won:"), 0, 1);
+        root.add(logPane, 0, 2, 1, 3);
 
         close.setOnAction(event -> {
             close.setVisible(false);
@@ -464,8 +474,8 @@ public class Agent extends Application {
             };
             timer.start();
         });
-        gp.add(close, 5, 0);
+        root.add(close, 5, 0);
 
-        return gp;
+        return root;
     }
 }
