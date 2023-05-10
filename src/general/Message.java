@@ -33,5 +33,4 @@ public interface Message {
     record AuctionHouseClosed(String accountNumber) implements Message, Serializable {}
     record ConfirmBid(boolean success, String item, String name) implements Message, Serializable {}
     record UpdateMoney (double amount, double hold) implements Message, Serializable {}
-
 }

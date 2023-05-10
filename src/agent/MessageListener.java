@@ -29,7 +29,7 @@ public class MessageListener implements Runnable {
     }
 
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag false to stop the thread
      */
     protected void stop() {
         loop = false;

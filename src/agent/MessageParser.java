@@ -52,9 +52,7 @@ public class MessageParser implements Runnable {
                 } else if (msg instanceof ConfirmBid confirmBid) {
                     String status = confirmBid.success() ?
                             "accepted" : "rejected";
-                    System.out.println("Bid " + status + " for " +
-                            confirmBid.item() + " at " +
-                            confirmBid.name() + ".");
+                    System.out.println("Bid " + status + " for " + confirmBid.item() + " at " + confirmBid.name() + ".");
                 } else if (msg instanceof NewAuctions newAuctions) {
                     agent.newAuctions(newAuctions);
                 } else if (msg instanceof UpdateMoney updateFunds) {
