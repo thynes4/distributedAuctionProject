@@ -418,7 +418,7 @@ public class Agent extends Application {
 
         log.setMinWidth(200);
         logPane.setMinHeight(500);
-        logPane.setMinWidth(225);
+        logPane.setMinWidth(200);
         logPane.setContent(log);
         root.add(new Label("Items won:"), 0, 1);
         root.add(logPane, 0, 2, 1, 3);

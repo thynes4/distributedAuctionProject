@@ -28,3 +28,11 @@
     -fx-accent: #7cafc2;
     -fx-text-fill: #f8f8f8;
 }
+
+.log-pane{
+    -fx-background-color: #383838;
+    -fx-font-size: 12pt;
+    -fx-control-inner-background: #282828;
+    -fx-accent: #7cafc2;
+    -fx-text-fill: #f8f8f8;
+}
