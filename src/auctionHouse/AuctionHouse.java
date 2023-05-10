@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -85,7 +84,7 @@ public class AuctionHouse extends Application{
             try {
                 // if the auction cannot be found, try to send a message to the agent to
                 // indicate that the bid was unsuccessful
-                agents.get(message.accNum()).output.writeObject(
+                agents.get(message.accountNumber()).output.writeObject(
                         new ConfirmBid(false, message.item(), name));
             } catch (IOException ignored2) {
             }
@@ -154,7 +153,7 @@ public class AuctionHouse extends Application{
         agent.listener = new MessageListener(messages, in, out); // listens for messages
         agent.thread = new Thread(agent.listener);
 
-        agents.put(message.accNum(), agent); // add the agent to our map of connected agents
+        agents.put(message.accountNumber(), agent); // add the agent to our map of connected agents
         System.out.println("Added a new agent named:  \"" + agent.name + "\"" + " to the Auction House");
         agent.thread.start();
         sendAuctionInfo(); // send the auction info to the agent
@@ -514,11 +513,11 @@ public class AuctionHouse extends Application{
             try {
                 NewBid bid = grabBid(message);
                 pending.remove(bid); // remove the bid from our list of pending bids
-                Connection agentConnection = agents.get(bid.accNum()); // grab the agent's bank account number
+                Connection agentConnection = agents.get(bid.accountNumber()); // grab the agent's bank account number
 
                 // make sure the agent has the funds available in their bank account
                 if (!winningAgent.equals("no bidder") &&
-                        (!agentAccount.equals(message.accNum()))) {
+                        (!agentAccount.equals(message.accountNumber()))) {
                     bank.output.writeObject(new EndHold(agentAccount, winningBid, holdStr(auctionID)));
                 }
 
@@ -528,7 +527,7 @@ public class AuctionHouse extends Application{
                 if (bid.bid() > winningBid) {
                     winningBid = bid.bid();
                     winningAgent = agentConnection.name;
-                    agentAccount = bid.accNum();
+                    agentAccount = bid.accountNumber();
 
                     // send a message to the agent confirming that their bid was
                     // accepted and confirmed, also print a message to the
@@ -540,7 +539,7 @@ public class AuctionHouse extends Application{
                     // send a message to the bank that the bid was rejected, also print a message to
                     // the console about the rejected bid
                     agentConnection.output.writeObject(new ConfirmBid(false, item, name));
-                    bank.output.writeObject(new EndHold(bid.accNum(), bid.bid(), holdStr(bid.id())));
+                    bank.output.writeObject(new EndHold(bid.accountNumber(), bid.bid(), holdStr(bid.id())));
                     System.out.println("New bid on item: " + item + "was just rejected from agent: " + agentConnection.name);
                 }
             } catch (IllegalAccessException | IOException ignored) {
@@ -557,7 +556,7 @@ public class AuctionHouse extends Application{
             for (NewBid bid : pending) {
                 // if the bid is found in the list of pending bids, return it
                 if ((message.id() == bid.id()) &&
-                        (message.accNum().equals(bid.accNum()))) {
+                        (message.accountNumber().equals(bid.accountNumber()))) {
                     return bid;
                 }
             }
@@ -577,20 +576,20 @@ public class AuctionHouse extends Application{
             reset(); // reset the bidding timer
             pending.add(message); // add the bid's info to our list of pending bids
             System.out.println("New bid on the item: " + item +
-                    " was just received from agent: " + agents.get(message.accNum()).name);
+                    " was just received from agent: " + agents.get(message.accountNumber()).name);
 
             // a bid is valid if the bid is greater than the current winning bid
             if (message.bid() > winningBid) {
                 // send a message to the bank instructing it to hold the bid amount from the bidding agent's account
                 bank.output.writeObject(new NewHold(
-                        message.accNum(), message.bid(), holdStr(auctionID), auctionID));
+                        message.accountNumber(), message.bid(), holdStr(auctionID), auctionID));
             } else {
                 // a bid is invalid if the bid isn't greater than the current winning bid
                 // reject the bid
-                agents.get(message.accNum()).output.writeObject(
+                agents.get(message.accountNumber()).output.writeObject(
                         new ConfirmBid(false, item, name));
                 System.out.println("New bid on the item: " + item +
-                        " was just rejected from agent: " + agents.get(message.accNum()).name);
+                        " was just rejected from agent: " + agents.get(message.accountNumber()).name);
             }
         }
 

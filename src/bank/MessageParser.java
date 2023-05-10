@@ -8,21 +8,38 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.BlockingQueue;
 
+
+/**
+ * reads messages and calls the appropriate method in the bank class based
+ * on the type of message received.
+ */
 public class MessageParser implements Runnable {
     private final Bank bank;
     private final BlockingQueue<Pair<Message, ObjectOutputStream>> messages;
     private boolean loop;
 
+    /**
+     * Constructor
+     * @param bankObj the bank object we're parsing messages for
+     * @param messages a blockingqueue to read messages from
+     */
     protected MessageParser(Bank bankObj, BlockingQueue<Pair<Message, ObjectOutputStream>> messages) {
         this.bank = bankObj;
         this.messages = messages;
         loop = true;
     }
 
+    /**
+     * sets the loop flag to false to stop the thread
+     */
     protected void stop() {
         loop = false;
     }
 
+    /**
+     * Run method overrides the runnable interface and is executed when the thread is started.
+     * Reads messages from the messages and processes them accordingly
+     */
     @Override
     public void run() {
         while (loop) {
@@ -36,16 +53,16 @@ public class MessageParser implements Runnable {
                     bank.sendAgentBalance(auctionOver.agentNum());
                     bank.sendAHBalance(auctionOver.ahNum());
                 } else if (m instanceof AuctionHouseClosed closeAH) {
-                    bank.closeAuctionHouseAcc(closeAH.accNum());
+                    bank.closeAuctionHouseAcc(closeAH.accountNumber());
                 } else if (m instanceof CloseAgent closeAgent) {
-                    bank.closeAgentAccount(closeAgent.accNum());
+                    bank.closeAgentAccount(closeAgent.accountNumber());
                 } else if (m instanceof EndHold endHold) {
                     bank.removeHold(endHold.accNum(), endHold.item());
                     bank.sendAgentBalance(endHold.accNum());
                 } else if (m instanceof NewHold newHold) {
                     boolean holdPlaced = bank.addNewHold(newHold);
-                    bank.sendAgentBalance(newHold.accNum());
-                    out.writeObject(new ConfirmHold(holdPlaced, newHold.accAndID(), newHold.accNum(), newHold.idNum()));
+                    bank.sendAgentBalance(newHold.accountNumber());
+                    out.writeObject(new ConfirmHold(holdPlaced, newHold.accAndID(), newHold.accountNumber(), newHold.idNum()));
                 } else {
                     System.out.println("Error: Invalid message on existing stream.");
                 }
