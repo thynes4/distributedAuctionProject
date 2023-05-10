@@ -134,11 +134,14 @@ Record class that holds data for a socket. Holds the host name and port number.
 
 
 ## _User Interface:_ 
-The UI includes sections of the Auction House and Agent classes. Each class has two UI elements, the login and menus.
-The login page for each of these prompts the user for any required information to continue, and the menu is used
-to display important information.
-The Agent menu also includes buttons so that the user can place a bid on a desired item. These buttons are only active
-if the user has enough funds to support a bid.
+The UI includes sections of the Auction House and Agent classes. 
+Each class has two UI elements, the login and menus.
+
+The login page for each of these prompts the user for any required information to continue, and the menu is 
+used to display important information.
+
+The Agent menu also includes buttons so that the user can place a bid on a desired item. 
+These buttons are only active if the user has enough funds to support a bid.
 
 ## _How To Use:_
 
