@@ -1,5 +1,5 @@
 /**
- * Thomas Hynes, Christopher Jarek, Carmen Manohan
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
  * Agent Main
  */
 package agent;
@@ -177,9 +177,9 @@ public class Agent extends Application {
      */
     @Override
     public void start(Stage primaryStage){
-        /**
-         * Initializing jfx objects
-         */
+
+
+        //Initializing jfx objects
 
         acctNum = "none";
         messages = new LinkedBlockingQueue<>();
@@ -195,10 +195,7 @@ public class Agent extends Application {
         TextField balance = new TextField();
         Button start = new Button("Start");
 
-
-        /**
-         * start logic goes here
-         */
+        // start logic goes here
         start.setOnAction(event -> {
             try {
                 closingAgent = false;
@@ -227,9 +224,8 @@ public class Agent extends Application {
         });
 
 
-        /**
-         * Formatting and such
-         */
+
+        // Formatting and such
         int row = 0;
         root.addRow(row, new Label("Name: "), nameInput);
         root.addRow(++row, new Label("Balance: "), balance);

@@ -457,7 +457,7 @@ public class AuctionHouse extends Application{
         primaryStage.sizeToScene();
     }
 
-    private class Connection {
+    private static class Connection {
         private Socket socket; // bank socket
         private ObjectInputStream input; // input stream
         private ObjectOutputStream output; // output stream

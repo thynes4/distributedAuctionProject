@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Bank Message Listener
+ */
 package bank;
 import general.Message;
 import javafx.util.Pair;
@@ -14,7 +18,7 @@ public class MessageListener implements Runnable {
     private final ObjectOutputStream out;
 
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag to false. stop the thread
      */
     protected void stop() {
         loop = false;

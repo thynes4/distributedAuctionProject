@@ -1,9 +1,7 @@
 /**
  * Thomas Hynes, Christopher Jarek, Carmen Monohan
- * Interface to be used to format our messages between the bank, agent,
- * and auction house
+ * Message Interface
  */
-
 package general;
 
 import java.io.Serializable;

@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Auction House Socket Listener
+ */
 package auctionHouse;
 
 import java.io.IOException;
@@ -26,7 +30,7 @@ public class SocketListener implements Runnable {
     }
 
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag to false. stop the thread
      */
     protected void stop() {
         loop = false;

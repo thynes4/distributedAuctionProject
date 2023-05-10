@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Bank Socket Parser
+ */
 package bank;
 
 import general.Message;
@@ -30,7 +34,7 @@ public class SocketParser implements Runnable {
     }
 
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag to false. stop the thread
      */
     public void stop () {
         loop = false;

@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Auction House Message Listener
+ */
 package auctionHouse;
 import general.Message;
 import javafx.util.Pair;
@@ -27,7 +31,7 @@ public class MessageListener implements Runnable {
     }
 
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag to false. stop the thread
      */
     protected void stop() {
         loop = false;

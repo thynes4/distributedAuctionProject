@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Bank Socket Listener
+ */
 package bank;
 
 import java.io.IOException;
@@ -25,7 +29,7 @@ public class SocketListener implements Runnable {
         this.sockets = sockets;
     }
     /**
-     * sets the loop flag to false to stop the thread
+     * sets the loop flag to false. stop the thread
      */
     protected void stop() {
         loop = false;

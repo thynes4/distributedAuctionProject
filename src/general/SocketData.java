@@ -1,3 +1,7 @@
+/**
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * SocketData Record
+ */
 package general;
 
 import java.io.Serializable;

@@ -1,5 +1,5 @@
 /**
- * Thomas Hynes, Christopher Jarek, Carmen Manohan
+ * Thomas Hynes, Christopher Jarek, Carmen Monohan
  * Bank Main
  */
 package bank;
@@ -22,7 +22,7 @@ public class Bank {
     /**
      * Definition of the Account class with all required variables.
      */
-    private class Account {
+    private static class Account {
         private String name;
         private double balance;
         private Map<String, Double> holds;
