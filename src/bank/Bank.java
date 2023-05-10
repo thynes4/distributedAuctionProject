@@ -19,6 +19,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Bank {
+    /**
+     * Definition of the Account class with all required variables.
+     */
     private class Account {
         private String name;
         private double balance;
@@ -29,6 +32,9 @@ public class Bank {
         private Thread listenerThread;
     }
 
+    /**
+     * Definition of global variables
+     */
     private final int port;
     private final int accountDifference = 4;
     private final Map<String, Account> agents;
@@ -37,6 +43,10 @@ public class Bank {
     BlockingQueue<Socket> sockets;
     private Integer current = 0;
 
+    /**
+     * main method for Bank, used to initialize the port and bank
+     * @param args not used
+     */
     public static void main(String[] args) {
         int port;
         try {
@@ -50,6 +60,10 @@ public class Bank {
         }
     }
 
+    /**
+     * Definition of the bank class with variables.
+     * @param port number ID used to represent the port
+     */
     private Bank(int port) {
         this.port = port;
         auctionHouses = new HashMap<>();
@@ -58,6 +72,10 @@ public class Bank {
         messages = new LinkedBlockingQueue<>();
     }
 
+    /**
+     * Starts the parser and message threads.
+     * @throws IOException in case any destination obj is not found
+     */
     private void start() throws IOException {
         SocketParser socketParser = new SocketParser(this, sockets);
         SocketListener socketListener = new SocketListener(port, sockets);
@@ -72,6 +90,9 @@ public class Bank {
         sListenerThread.start();
     }
 
+    /**
+     * Gathers and sends the list of active Auction Houses to each available Agent.
+     */
     protected void sendAuctionHouseList() {
         synchronized (auctionHouses) {
             Map<String, SocketData> auctionHouseData = new HashMap<>();
@@ -92,6 +113,11 @@ public class Bank {
         }
     }
 
+    /**
+     * gathers the list of holds for given Agent
+     * gathers the Agent's current balance, sends both to Agent
+     * @param accNum string used to represent target Agent
+     */
     protected void sendAgentBalance(String accNum) {
         Account account = agents.get(accNum);
         try {
@@ -106,6 +132,11 @@ public class Bank {
             System.out.println("Error in writing balance to client: " + e.getMessage());
         }
     }
+
+    /**
+     * pulls and updates the auction house's balance
+     * @param accountNum string used to represent target Agent
+     */
     protected void sendAHBalance(String accountNum) {
         Account account = auctionHouses.get(accountNum);
         try {
@@ -117,12 +148,24 @@ public class Bank {
         }
     }
 
+    /**
+     * Method to close the Auction House and remove the current hold on the wining Agent
+     * @param auctionHouseAccount Auction House balance before close
+     * @param agentAccount target Agent
+     * @param item hold to be removed from the Agent
+     * @param amount to be added to the Auction House's balance after close
+     */
     protected void auctionEnded(String auctionHouseAccount, String agentAccount, String item, double amount) {
         removeHold(agentAccount, item);
         auctionHouses.get(auctionHouseAccount).balance += amount;
         agents.get(agentAccount).balance -= amount;
     }
 
+    /**
+     * Removes the specified hold from the given Agent
+     * @param accountNum string used to ID the specific Agent
+     * @param item string used to ID the hold to be removed
+     */
     protected void removeHold(String accountNum, String item) {
         Account account = agents.get(accountNum);
         synchronized (agents.get(accountNum)) {
@@ -130,6 +173,11 @@ public class Bank {
         }
     }
 
+    /**
+     * Method to add a hold to an Agent's current holds
+     * @param newHold type NewHold to be added
+     * @return returns true if Agent can support current holds, false otherwise
+     */
     protected boolean addNewHold(NewHold newHold) {
         if (agents.containsKey(newHold.accountNumber())) {
             Account account = agents.get(newHold.accountNumber());
@@ -153,6 +201,10 @@ public class Bank {
         }
     }
 
+    /**
+     * kills the thread currently running the given Auction House
+     * @param accNum string to ID given Auction House
+     */
     protected void closeAuctionHouseAcc(String accNum) {
         synchronized (auctionHouses) {
             Account account = auctionHouses.remove(accNum);
@@ -164,6 +216,13 @@ public class Bank {
         sendAuctionHouseList();
     }
 
+    /**
+     * Creates and adds a new Agent to the list of Auction Houses and the Bank
+     * @param msg NewAgent type used to name the account
+     * @param input input stream
+     * @param output output stream
+     * @throws IOException in case the Bank or an Auction House object is not found
+     */
     protected void addAgent (NewAgent msg, ObjectInputStream input, ObjectOutputStream output)
             throws IOException {
         String accNum;
@@ -203,6 +262,14 @@ public class Bank {
         }
     }
 
+    /**
+     * Method to initialize a new Auction House and add it to the current active list
+     * @param socket socket
+     * @param msg NewAuctionHouse type message
+     * @param in input stream
+     * @param out output stream
+     * @throws IOException in case listener thread is not found
+     */
     protected void addAH(Socket socket, NewAuctionHouse msg, ObjectInputStream in, ObjectOutputStream out) throws IOException {
         String accNum;
 
@@ -230,6 +297,11 @@ public class Bank {
         out.writeObject(new AuctionHouseMade(accNum));
         sendAuctionHouseList();
     }
+
+    /**
+     * kills the specified Agent
+     * @param accNum string to identify desired Agent
+     */
     protected void closeAgentAccount(String accNum) {
         synchronized (agents) {
             Account account = agents.remove(accNum);
