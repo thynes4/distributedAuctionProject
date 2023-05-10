@@ -50,10 +50,10 @@ public class AuctionHouse extends Application{
     private GridPane auctionPane;
     private BlockingQueue<Socket> sockets;
 
-    private final String[] itemColors = {"red", "orange", "yellow", "green",
-            "blue", "purple", "black", "white"};
-    private final String[] items = {"chair", "couch", "ottoman", "stool",
-            "desk", "bed", "dresser", "rug", "table", "recliner", "bench"};
+    private final String[] itemTypes = {"cool", "weird", "small", "funny",
+            "lame", "master", "epic", "common"};
+    private final String[] items = {"orb", "sword", "bug", "art",
+            "house", "piano", "dresser", "rug", "camera", "guitar", "poetry"};
 
     /**
      * Confirms whether there are funds in an agent's account that are being held for a pending bid
@@ -239,7 +239,7 @@ public class AuctionHouse extends Application{
      * @return the new Auction item that is to be added to our list of all auctions
      */
     private Auction grabAuction() {
-        String item = itemColors[(int)(Math.random() * itemColors.length)] + " " +
+        String item = itemTypes[(int)(Math.random() * itemTypes.length)] + " " +
                 items[(int)(Math.random() * items.length)];
         return new Auction(item, ++auctionNum);
     }
