@@ -4,6 +4,8 @@ import general.Message;
 import javafx.util.Pair;
 import general.Message;
 import general.Message.*;
+
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.BlockingQueue;
 
@@ -31,10 +33,28 @@ public class MessageParser implements Runnable {
                 ObjectOutputStream out = data.getValue();
                 Message m = data.getKey();
 
-                //ADD FUNCTIONALITY TO HANDLE DIFFERENT MESSAGES
-
+                if (m instanceof AuctionOver auctionOver) {
+                    bank.auctionEnded(auctionOver.ahNum(), auctionOver.clientNum(), auctionOver.item(), auctionOver.amount());
+                    bank.sendAgentBalance(auctionOver.clientNum());
+                    bank.sendAHBalance(auctionOver.ahNum());
+                } else if (m instanceof AuctionHouseClosed closeAH) {
+                    bank.closeAuctionHouseAcc(closeAH.accNum());
+                } else if (m instanceof CloseAgent closeAgent) {
+                    bank.closeAgentAccount(closeAgent.accNum());
+                } else if (m instanceof EndHold endHold) {
+                    bank.removeHold(endHold.accNum(), endHold.item());
+                    bank.sendAgentBalance(endHold.accNum());
+                } else if (m instanceof NewHold newHold) {
+                    boolean holdPlaced = bank.addNewHold(newHold);
+                    bank.sendAgentBalance(newHold.accNum());
+                    out.writeObject(new ConfirmHold(holdPlaced, newHold.accAndID(), newHold.accNum(), newHold.idNum()));
+                } else {
+                    System.out.println("Error: Invalid message on existing stream.");
+                }
             } catch (InterruptedException e) {
-                System.out.println("Error: Message parser interrupted: " + e.getMessage());
+                System.out.println("Message parser interrupted : " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("Error sending hold confirmation : " + e.getMessage());
             }
         }
     }
