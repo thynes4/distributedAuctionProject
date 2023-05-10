@@ -1,5 +1,5 @@
 /**
- * Thomas Hynes, Christopher Jarek, Carmen Monohan
+ * Thomas Hynes, Christopher Jarek, Carmen Manohan
  * Agent Main
  */
 package agent;
@@ -16,7 +16,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Pair;
@@ -177,9 +179,9 @@ public class Agent extends Application {
      */
     @Override
     public void start(Stage primaryStage){
-
-
-        //Initializing jfx objects
+        /**
+         * Initializing jfx objects
+         */
 
         acctNum = "none";
         messages = new LinkedBlockingQueue<>();
@@ -195,7 +197,10 @@ public class Agent extends Application {
         TextField balance = new TextField();
         Button start = new Button("Start");
 
-        // start logic goes here
+
+        /**
+         * start logic goes here
+         */
         start.setOnAction(event -> {
             try {
                 closingAgent = false;
@@ -224,8 +229,9 @@ public class Agent extends Application {
         });
 
 
-
-        // Formatting and such
+        /**
+         * jfx Formatting
+         */
         int row = 0;
         root.addRow(row, new Label("Name: "), nameInput);
         root.addRow(++row, new Label("Balance: "), balance);
@@ -243,6 +249,9 @@ public class Agent extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Method used to keep the runtime environment active and updated
+     */
     private void run() {
         AnimationTimer timer = new AnimationTimer() {
             long lastUpdate = 0;
@@ -277,6 +286,9 @@ public class Agent extends Application {
         acctWait.start();
     }
 
+    /**
+     * Method to update the window, called automatically from run()
+     */
     private void updateWindow() {
         balLabel.setText(USD.format(balance));
         holdLabel.setText(USD.format(holds));
@@ -285,6 +297,9 @@ public class Agent extends Application {
         primaryStage.sizeToScene();
     }
 
+    /**
+     * Called from updateWindow(), showAuctions updates the Auctions box in fx
+     */
     private void showAuctions() {
         int row = 0, col;
         auctionPane.getChildren().clear();
@@ -305,23 +320,33 @@ public class Agent extends Application {
         }
     }
 
+    /**
+     * Method
+     * @param name Name of the auction to be shown
+     * @param info Auction info to be shown
+     * @return a GridPane object to showAuctions() as the UI
+     */
     private GridPane showAuction(String name, AuctionData info) {
-        GridPane gp = new GridPane();
+        GridPane root = new GridPane();
         Button bid = new Button("Place bid.");
         int row = 0;
 
-        gp.setPadding(new Insets(10));
-        gp.setHgap(5);
-        gp.setVgap(5);
-        gp.setMinWidth(200);
+        root.setPadding(new Insets(10));
+        root.setHgap(10);
+        root.setVgap(10);
+        root.setMinWidth(400);
 
-        gp.add(new Label("ID: " + info.ID()), 0, row);
-        gp.add(new Label("Item: " + info.item()), 1, row);
-        gp.add(new Label("Price: " + USD.format(info.winningBid())), 0, ++row);
-        gp.add(new Label("Current high bidder: " + info.winningAgent()), 0, ++row, 2, 1);
+        ColumnConstraints columnConstraints = new ColumnConstraints();
+        columnConstraints.setHgrow(Priority.SOMETIMES);
+        root.getColumnConstraints().add(columnConstraints);
+
+        root.add(new Label("ID: " + info.ID()), 0, row);
+        root.add(new Label("Item: " + info.item()), 1, row);
+        root.add(new Label("Price: " + USD.format(info.winningBid())), 0, ++row);
+        root.add(new Label("Current high bidder: " + info.winningAgent()), 0, ++row, 2, 1);
 
         if (balance - holds >= info.winningBid()) {
-            gp.add(bid, 0, ++row, 2, 1);
+            root.add(bid, 0, ++row, 2, 1);
         }
 
         bid.setOnAction(event -> {
@@ -337,7 +362,7 @@ public class Agent extends Application {
 
         if (closingAgent) bid.setVisible(false);
 
-        return gp;
+        return root;
     }
 
     private void showItemsWon() {
@@ -350,7 +375,7 @@ public class Agent extends Application {
 
     private GridPane buildWindow() {
         GridPane gp = new GridPane();
-        log = new Label("");
+        log = new Label();
         ScrollPane logPane = new ScrollPane();
         Button close = new Button("Close Bidding Agent");
         balLabel = new Label(USD.format(0));
@@ -359,8 +384,8 @@ public class Agent extends Application {
         int row = 0;
 
         gp.setPadding(new Insets(10));
-        gp.setVgap(5);
-        gp.setHgap(5);
+        gp.setVgap(10);
+        gp.setHgap(10);
 
         gp.add(new Label("Bidder name: " + name), 1, row, 4, 1);
 
