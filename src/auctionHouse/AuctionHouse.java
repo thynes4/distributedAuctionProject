@@ -480,7 +480,6 @@ public class AuctionHouse extends Application{
         private Timer timer;
         private TimerTask task;
         private boolean expired;
-        private final long EXPIRATION_TIMER = 10_000L; //10s delay for timer
 
         /**
          * Generates string used in hold messages to bank.
@@ -535,7 +534,7 @@ public class AuctionHouse extends Application{
                     // accepted and confirmed, also print a message to the
                     // console about the accepted bid
                     agentConnection.output.writeObject(new ConfirmBid(true, item, name));
-                    System.out.println("New bid on item: " + item + "was just accepted from agent: " + winningAgent);
+                    System.out.println("New bid on item: " + item + " was just accepted from agent: " + winningAgent);
                 }
                 else {
                     // send a message to the bank that the bid was rejected, also print a message to
@@ -607,6 +606,10 @@ public class AuctionHouse extends Application{
                     expired = true;
                 }
             };
+
+            //30s delay for timer
+            long EXPIRATION_TIMER = 30_000L;
+
             timer.schedule(task, EXPIRATION_TIMER);
         }
 
