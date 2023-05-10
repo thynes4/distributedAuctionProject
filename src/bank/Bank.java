@@ -131,24 +131,24 @@ public class Bank {
     }
 
     protected boolean addNewHold(NewHold newHold) {
-        if (agents.containsKey(newHold.accountNumber())) {
-            Account account = agents.get(newHold.accountNumber());
-            synchronized (agents.get(newHold.accountNumber())) {
+        if (agents.containsKey(newHold.accNum())) {
+            Account account = agents.get(newHold.accNum());
+            synchronized (agents.get(newHold.accNum())) {
                 account.holds.remove(newHold.accAndID());
                 double holds = 0;
                 for (String s : account.holds.keySet()) {
                     holds = account.holds.get(s) + holds;
                 }
                 if ((holds + newHold.amount()) > account.balance) {
-                    System.out.println("Could not apply hold to account #" + newHold.accountNumber() + ": Insufficient funds.");
+                    System.out.println("Could not apply hold to account #" + newHold.accNum() + ": Insufficient funds.");
                     return false;
                 }
                 account.holds.put(newHold.accAndID(), newHold.amount());
             }
-            System.out.println("Hold for $" + newHold.accAndID() + " to account #" + newHold.accountNumber());
+            System.out.println("Hold for $" + newHold.accAndID() + " to account #" + newHold.accNum());
             return true;
         } else {
-            System.out.println("Error: Could not apply hold to account #" + newHold.accountNumber() + ": Account not found.");
+            System.out.println("Error: Could not apply hold to account #" + newHold.accNum() + ": Account not found.");
             return false;
         }
     }

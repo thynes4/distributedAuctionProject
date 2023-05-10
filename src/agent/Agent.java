@@ -20,8 +20,6 @@ import java.net.Socket;
 
 public class Agent extends Application {
     private Connection bank;
-
-
     private String ID = "N/A";
     private String name = "N/A";
     private double bal;
@@ -80,7 +78,7 @@ public class Agent extends Application {
         primaryStage.show();
     }
 
-    private class Connection{
+    private class Connection {
         private Socket socket;
         private ObjectInputStream input;
         private ObjectOutputStream output;
