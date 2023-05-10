@@ -100,7 +100,7 @@ public class Bank {
                 for (String s : account.holds.keySet()) {
                     holds = holds + account.holds.get(s);
                 }
-                account.out.writeObject(new updateMoney(account.balance, holds));
+                account.out.writeObject(new UpdateMoney(account.balance, holds));
             }
         } catch (IOException e) {
             System.out.println("Error in writing balance to client: " + e.getMessage());
@@ -110,7 +110,7 @@ public class Bank {
         Account account = auctionHouses.get(accountNum);
         try {
             synchronized (auctionHouses.get(accountNum)) {
-                account.out.writeObject(new updateMoney(account.balance, 0));
+                account.out.writeObject(new UpdateMoney(account.balance, 0));
             }
         } catch (IOException e) {
             System.out.println("Cannot write balance to auction house: " + e.getMessage());

@@ -131,8 +131,7 @@ public class AuctionHouse extends Application{
      * @param out sends messages to the agent
      * @param in receives messages from the agent
      */
-    protected void addNewAgent(Message.RegisterAgent message, ObjectOutputStream out,
-                               ObjectInputStream in) {
+    protected void addNewAgent(Message.RegisterAgent message, ObjectOutputStream out, ObjectInputStream in) {
         Connection agent = new Connection(); // the agent's connection
         agent.name = message.name(); // the agent's name
         agent.input = in; // the agent's input stream
@@ -142,7 +141,6 @@ public class AuctionHouse extends Application{
 
         agents.put(message.accNum(), agent); // add the agent to our map of connected agents
         System.out.println("Added a new agent named:  \"" + agent.name + "\"" + " to the Auction House");
-
         agent.thread.start();
         sendAuctionInfo(); // send the auction info to the agent
     }
