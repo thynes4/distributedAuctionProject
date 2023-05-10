@@ -6,6 +6,7 @@ package auctionHouse;
 import general.AuctionData;
 import general.Message;
 import general.Message.*;
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -22,6 +23,7 @@ import java.net.Socket;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class AuctionHouse extends Application{
     private Connection bank; // the connection to the bank
@@ -30,10 +32,23 @@ public class AuctionHouse extends Application{
     private final Auction[] auctions = new Auction[3]; // list of starting auctions
     private String accountNumber; // account number
     private String name; // the agent's name
-
-    private double AHBalance; // Auction house's bank account balance
+    private int port;
+    private double aHBalance; // Auction house's bank account balance
     private int auctionNum = 0; //Auction ID number
     private boolean newAuctions; // are there new auctions available?
+    private final long FREQ = 2_000_000_000; //two seconds
+
+
+    private Stage primaryStage;
+    private Label balLabel;
+    private AnimationTimer accWait;
+    private final NumberFormat USD = NumberFormat.getCurrencyInstance(new Locale("en", "US"));
+    private SocketListener sl;
+    private SocketParser ps;
+    private Thread sockListenThread;
+    private Thread parseSockThread;
+    private GridPane auctionPane;
+    private BlockingQueue<Socket> sockets;
 
     private final String[] itemColors = {"red", "orange", "yellow", "green",
             "blue", "purple", "black", "white"};
@@ -96,10 +111,10 @@ public class AuctionHouse extends Application{
 
     /**
      * Updates the auction house's bank account AHBalance
-     * @param AHBalance updated AHBalance
+     * @param aHBalance updated AHBalance
      */
-    protected void updateAHBankAccount(double AHBalance) {
-        this.AHBalance = AHBalance;
+    protected void updateAHBankAccount(double aHBalance) {
+        this.aHBalance = aHBalance;
     }
 
     /**
@@ -200,6 +215,24 @@ public class AuctionHouse extends Application{
         if (auctionsUpdated) sendAuctionInfo();
     }
 
+    private GridPane showAuction(Auction auction) {
+        GridPane gp = new GridPane();
+        int row = 0;
+
+        gp.setPadding(new Insets(10));
+        gp.setHgap(5);
+        gp.setVgap(5);
+
+        gp.add(new Label("ID: " + auction.auctionID), 0, row);
+        gp.add(new Label("Item: " + auction.item), 1, row);
+        gp.add(new Label("Price: " + USD.format(auction.winningBid)),
+                0, ++row);
+        gp.add(new Label("Current high bidder: " + auction.winningAgent),
+                0, ++row, 2, 1);
+
+        return gp;
+    }
+
     /**
      * Creates a new auction with a unique auction ID number given an item that is to be up for bid.
      * Each item is randomly chosen from the list of possible items and is randomly assigned a color
@@ -234,29 +267,65 @@ public class AuctionHouse extends Application{
      * primary stages.
      */
     @Override
-    public void start(Stage primaryStage){
+    public void start(Stage primaryStage) {
+        accountNumber = "none";
+        messages = new LinkedBlockingQueue<>();
+        agents = Collections.synchronizedMap(new HashMap<>());
+        sockets = new LinkedBlockingQueue<>();
+        this.primaryStage = primaryStage;
+
 
          //Initializing jfx objects
 
         GridPane root = new GridPane();
-        TextField name = new TextField();
+        TextField nameInput = new TextField();
         TextField localPort = new TextField();
         TextField bankName = new TextField();
         TextField bankPort = new TextField();
         Button start = new Button("Start");
 
-
-
          //start logic goes here
 
-        start.setOnAction(event -> {});
+        start.setOnAction(event -> {
+            try {
+                newAuctions = true;
+                auctionPane = new GridPane();
+                startingAuctions();
+                port = Integer.parseInt(localPort.getText());
+                bank = new Connection();
+                bank.socket = new Socket(bankName.getText(), Integer.parseInt(bankPort.getText()));
+                bank.output = new ObjectOutputStream(bank.socket.getOutputStream());
+                bank.output.flush();
+                bank.input = new ObjectInputStream(bank.socket.getInputStream());
+                bank.listener = new MessageListener(messages, bank.input, bank.output);
+                bank.thread = new Thread(bank.listener);
+                bank.thread.start();
 
+                sl = new SocketListener(port, sockets);
+                ps = new SocketParser(this, sockets);
+                sockListenThread = new Thread(sl);
+                parseSockThread = new Thread(ps);
+                sockListenThread.start();
+                parseSockThread.start();
 
+                MessageParser pm = new MessageParser(this, messages);
+                Thread t = new Thread(pm);
+                t.start();
+
+                name = nameInput.getText();
+
+                bank.output.writeObject(new NewAuctionHouse(name, port));
+                start.setVisible(false);
+                run();
+            } catch (IOException e) {
+                System.out.println("Error creating connection: " + e.getMessage());
+            }
+        });
 
          //Formatting and such
 
         int row = 0;
-        root.addRow(row, new Label("Name: "), name);
+        root.addRow(row, new Label("Name: "), nameInput);
         root.addRow(++row, new Label("Local Port: "), localPort);
         root.addRow(++row, new Label("Bank Name: "), bankName);
         root.addRow(++row, new Label("Bank Port: "), bankPort);
@@ -270,6 +339,121 @@ public class AuctionHouse extends Application{
         primaryStage.setScene(new Scene(root));
         root.getStylesheets().add("style.css");
         primaryStage.show();
+    }
+
+    private void run() {
+        AnimationTimer timer = new AnimationTimer() {
+            long lastUpdate = 0;
+            @Override
+            public void handle(long now) {
+                if (now - FREQ > lastUpdate) {
+                    lastUpdate = now;
+                    accWait.stop();
+                    updateWindow();
+                    primaryStage.sizeToScene();
+                }
+            }
+        };
+
+        accWait = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (now - 500_000_000 > 0) {
+                    if (!accountNumber.equals("none")) {
+                        primaryStage.hide();
+                        Scene scene = new Scene(buildWindow());
+                        primaryStage.setScene(scene);
+                        primaryStage.show();
+                        timer.start();
+                    }
+                }
+            }
+        };
+
+        accWait.start();
+    }
+
+    private GridPane buildWindow() {
+        GridPane gp = new GridPane();
+        Button close = new Button("Close Auction House");
+        balLabel = new Label(USD.format(0));
+        int row = 0;
+
+        gp.setPadding(new Insets(10));
+        gp.setVgap(5);
+        gp.setHgap(5);
+
+        gp.add(new Label("Auction house name: " + name), 0, row, 4, 1);
+
+        gp.add(new Label("Account number: " + accountNumber), 0, ++row, 4, 1);
+
+        balLabel.setMinWidth(50);
+
+        gp.add(new Label("Balance:"), 0, ++row);
+        gp.add(balLabel, 1, row);
+
+        gp.add(auctionPane, 1, ++row);
+
+        close.setOnAction(event -> {
+            close.setVisible(false);
+            newAuctions = false;
+
+            AnimationTimer timer = new AnimationTimer() {
+                long lastUpdate = 0;
+                @Override
+                public void handle(long now) {
+                    if (now - 500_000_000 > lastUpdate) {
+                        lastUpdate = now;
+                        if (checkAuctions()) {
+                            try {
+                                bank.output.writeObject(new AuctionHouseClosed(accountNumber));
+                            } catch (IOException e) {
+                                System.out.println(
+                                        "Error sending close to bank: " +
+                                                e.getMessage());
+                            }
+                            ps.stop();
+                            sl.stop();
+                            parseSockThread.interrupt();
+                            sockListenThread.interrupt();
+                            bank.listener.stop();
+                            bank.thread.interrupt();
+                            for (String s : agents.keySet()) {
+                                Connection c = agents.get(s);
+                                c.listener.stop();
+                                c.thread.interrupt();
+                            }
+                            stop();
+                        }
+                    }
+                }
+
+                private boolean checkAuctions() {
+                    for (int i = 0; i < 3; i++) {
+                        if (auctions[i] != null) return false;
+                    }
+                    return true;
+                }
+            };
+            timer.start();
+        });
+        gp.add(close, 4, 0);
+
+        return gp;
+    }
+
+    private void updateWindow() {
+        auctionPane.getChildren().clear();
+        balLabel.setText(USD.format(aHBalance));
+        checkAndUpdateAuctions();
+        synchronized (auctions) {
+            for (int i = 0; i < 3; i++) {
+                if (auctions[i] != null) {
+                    auctionPane.add(showAuction(auctions[i]), i, 0);
+                }
+            }
+        }
+        primaryStage.sizeToScene();
     }
 
     private class Connection {
