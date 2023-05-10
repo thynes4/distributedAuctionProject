@@ -45,7 +45,7 @@ public class AuctionHouse extends Application{
      *
      * @param message message from the bank confirming that the funds are being held
      */
-    protected void holdConfirmation(ConfirmHold message) {
+    protected void bidConfirmation(ConfirmHold message) {
         try {
             Auction auction = grabAuction(message.id()); // find the specified auction
             if (message.success()) {
@@ -53,8 +53,7 @@ public class AuctionHouse extends Application{
             }
             sendAuctionInfo(); // send the agent the updated auction info
         } catch (IllegalAccessException e) {
-            System.out.println("Error: Auction not found" +
-                    e.getMessage());
+            System.out.println("Error: Auction not found" + e.getMessage());
         }
     }
 

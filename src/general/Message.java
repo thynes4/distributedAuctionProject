@@ -27,6 +27,6 @@ public interface Message {
     record AuctionWon(String item, double amount) implements Message, Serializable {}
     record AuctionHouseClosed(String accNum) implements Message, Serializable {}
     record ConfirmBid(boolean success, String item, String name) implements Message, Serializable {}
-    record updateMoney(double amount, double hold) implements Message, Serializable {}
+    record UpdateMoney (double amount, double hold) implements Message, Serializable {}
 
 }

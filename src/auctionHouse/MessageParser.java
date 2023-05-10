@@ -27,11 +27,18 @@ public class MessageParser implements Runnable {
             try {
 
                 Pair<Message, ObjectOutputStream> data = messages.take();
-                ObjectOutputStream out = data.getValue();
                 Message m = data.getKey();
-
-                //ADD FUNCTIONALITY TO HANDLE DIFFERENT MESSAGES
-
+                if (m instanceof AuctionHouseMade ahMade) {
+                    auctionHouse.updateAccountNumber(ahMade.accNum());
+                } else if (m instanceof CloseAgent closeAgent) {
+                    auctionHouse.disconnectAgent(closeAgent.accNum());
+                }else if (m instanceof ConfirmHold confirmHold) {
+                    auctionHouse.bidConfirmation(confirmHold);
+                } else if (m instanceof NewBid newBid) {
+                    auctionHouse.bidReceived(newBid);
+                } else if (m instanceof  UpdateMoney updateMoney) {
+                    auctionHouse.updateAHBankAccount(updateMoney.amount());
+                }
             } catch (InterruptedException e) {
                 System.out.println("Error: Message parser interrupted: " + e.getMessage());
             }
