@@ -1,0 +1,30 @@
+/*
+    White: #f8f8f8
+    Black: #282828
+    Dark Grey: #383838
+    Light Grey: #585858
+    Blue: #7cafc2
+    Green: #a1b56c
+    Orange: #dc9656
+    Red: ab4642
+*/
+
+* {
+    -fx-font-family: "Lucida Console";
+}
+
+.root{
+    -fx-background-color: #383838;
+    -fx-font-size: 12pt;
+    -fx-control-inner-background: #282828;
+    -fx-accent: #7cafc2;
+    -fx-text-fill: #f8f8f8;
+}
+
+.label{
+    -fx-background-color: #383838;
+    -fx-font-size: 12pt;
+    -fx-control-inner-background: #282828;
+    -fx-accent: #7cafc2;
+    -fx-text-fill: #f8f8f8;
+}
