@@ -480,7 +480,7 @@ public class AuctionHouse extends Application{
         private Timer timer;
         private TimerTask task;
         private boolean expired;
-        private final long EXPIRATION_TIMER = 30_000L; //30s delay for timer
+        private final long EXPIRATION_TIMER = 10_000L; //10s delay for timer
 
         /**
          * Generates string used in hold messages to bank.
@@ -634,8 +634,6 @@ public class AuctionHouse extends Application{
                 @Override
                 public void run() {expired = true;}
             };
-
-            timer.schedule(task, EXPIRATION_TIMER);
         }
     }
 }
