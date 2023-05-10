@@ -64,7 +64,7 @@ exit when there are still bids to be resolved. At termination, the program de-re
 An auction house terminating does not break the behavior of any other program in the system. 
 
     AUCTION RULES:
-     - The auction house receives a bid and acknowledgess them with a reject or accept response. 
+     - The auction house receives a bid and acknowledges it with a reject or accept response. 
      - When a bid is accepted, the bank is requested to block those funds. 
      - A bid is not accepted if there are not enough available funds in the bank.
      - When a bid is overtaken, an outbid notification is sent to the agent and the funds are unblocked.
