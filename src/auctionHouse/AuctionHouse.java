@@ -363,6 +363,7 @@ public class AuctionHouse extends Application{
                         primaryStage.hide();
                         Scene scene = new Scene(buildWindow());
                         primaryStage.setScene(scene);
+                        scene.getStylesheets().add("style.css");
                         primaryStage.show();
                         timer.start();
                     }
