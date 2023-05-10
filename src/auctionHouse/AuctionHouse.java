@@ -51,9 +51,9 @@ public class AuctionHouse extends Application{
     private BlockingQueue<Socket> sockets;
 
     private final String[] itemTypes = {"cool", "weird", "small", "funny",
-            "lame", "master", "epic", "common"};
+            "lame", "master", "epic", "rare"};
     private final String[] items = {"orb", "sword", "bug", "art",
-            "house", "piano", "dresser", "rug", "camera", "guitar", "poetry"};
+            "house", "piano", "cat", "rug", "camera", "guitar", "poetry"};
 
     /**
      * Confirms whether there are funds in an agent's account that are being held for a pending bid
