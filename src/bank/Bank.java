@@ -175,7 +175,7 @@ public class Bank {
 
         Account account = new Account();
         account.name = msg.name();
-        account.balance = msg.initialBalance();
+        account.balance = msg.startBal();
         account.holds = new HashMap<>();
         account.in = input;
         account.out = output;
