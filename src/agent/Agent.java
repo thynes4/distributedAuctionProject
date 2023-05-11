@@ -390,11 +390,6 @@ public class Agent extends Application {
         auctionPane = new GridPane();
         int row = 0;
 
-        //
-        ColumnConstraints columnConstraints = new ColumnConstraints();
-        columnConstraints.setHgrow(Priority.SOMETIMES);
-        root.getColumnConstraints().add(columnConstraints);
-
         root.setPadding(new Insets(10));
         root.setVgap(10);
         root.setHgap(10);
