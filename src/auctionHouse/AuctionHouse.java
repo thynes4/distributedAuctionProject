@@ -622,7 +622,13 @@ public class AuctionHouse extends Application{
         private Auction(String item, int auctionID) {
             this.item = item; // the item
             this.auctionID = auctionID; // the auction's ID
-            winningBid = 20; // all auctions should start at $20
+
+            Random random = new Random();
+
+            int min = 20;
+            int max = 50;
+
+            winningBid = random.nextInt(max - min + 1) + min; // all auctions should start at $20
 
             winningAgent = "no bidder"; // the auction was just created, so there's no winning bidder yet
 
